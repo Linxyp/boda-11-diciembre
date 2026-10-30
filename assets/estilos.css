@@ -255,22 +255,8 @@ html.con-visor, html.con-visor body { overflow: hidden; }
 .rama--abajo { margin: 1.9rem auto 0; transform: scaleY(-1); }
 
 /* ==========================================================================
-   Fecha: calendario y cuenta regresiva
+   Fecha: cuenta regresiva
    ========================================================================== */
-.calendario {
-  width: min(100%, 21rem); margin: 2.75rem auto 0; padding: 1.6rem 1.25rem 1.3rem;
-  border: 1px solid var(--linea-clara);
-  outline: 1px solid rgba(205, 179, 135, .16); outline-offset: .4rem;
-}
-.calendario__mes { margin-bottom: 1rem; font: 500 .7rem/1.5 var(--sans); letter-spacing: .34em; text-indent: .34em; text-transform: uppercase; color: var(--champana); }
-.calendario__grilla { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: .35rem; font: 400 .95rem/1 var(--sans); font-variant-numeric: tabular-nums; }
-.calendario__cabeza { padding-bottom: .55rem; font-size: .62rem; font-weight: 500; letter-spacing: .12em; color: var(--champana); }
-.calendario__dia { position: relative; padding: .5rem 0; color: rgba(246, 241, 231, .78); }
-.calendario__dia--boda { color: var(--papel); font-weight: 500; }
-.calendario__marca { position: absolute; left: 50%; top: 50%; width: 2.9rem; height: 2.9rem; transform: translate(-50%, -50%); overflow: visible; }
-.calendario__marca path { fill: none; stroke: var(--champana); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.8s .5s var(--ease); }
-.calendario.visible .calendario__marca path, .sin-js .calendario__marca path { stroke-dashoffset: 0; }
-
 .cuenta { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 23rem; margin: 2.75rem auto 0; }
 .cuenta > div { display: grid; gap: .5rem; padding-block: .2rem; }
 .cuenta > div + div { border-left: 1px solid var(--linea-clara); }
@@ -475,14 +461,8 @@ html.con-visor, html.con-visor body { overflow: hidden; }
   .inicio__foto { grid-area: foto; width: 100%; max-height: 82vh; justify-self: end; }
   .inicio__fecha { grid-area: fecha; align-self: start; justify-items: start; text-indent: 0; }
 
-  .fecha .contenedor {
-    width: min(100% - 4rem, 58rem);
-    display: grid; grid-template-columns: 1fr 1fr; column-gap: 4.5rem; align-items: center;
-  }
-  .fecha .etiqueta, .fecha .titulo { grid-column: 1 / -1; }
-  .fecha .calendario { grid-column: 1; grid-row: 3 / span 2; justify-self: end; margin: 3.5rem 0 0; }
-  .fecha .cuenta { grid-column: 2; justify-self: start; width: 100%; margin: 3.5rem 0 0; }
-  .fecha .agendar { grid-column: 2; justify-self: start; width: min(100%, 23rem); margin-top: 2.25rem; }
+  .cuenta { max-width: 30rem; margin-top: 3.25rem; }
+  .cuenta span { font-size: 3.4rem; }
 
   .eventos { grid-template-columns: 1fr 1fr; gap: 2rem; }
   .evento + .evento { margin-top: 0; }
