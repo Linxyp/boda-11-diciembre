@@ -74,8 +74,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   position: absolute !important; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
 }
-html.con-portada, html.con-portada body,
-html.con-visor, html.con-visor body { overflow: hidden; }
+html.con-portada, html.con-portada body { overflow: hidden; }
 
 /* ---------- Piezas comunes ---------- */
 .seccion { position: relative; padding-block: clamp(5.25rem, 16vw, 9rem); }
@@ -128,7 +127,7 @@ html.con-visor, html.con-visor body { overflow: hidden; }
   .boton--lleno:hover { background: var(--verde-hondo); border-color: var(--verde-hondo); }
   .boton--claro:hover { background: var(--papel); border-color: var(--papel); color: var(--verde); }
   .portada .boton:hover { background: var(--papel); border-color: var(--papel); color: var(--verde); }
-  .galeria__item:hover img { transform: scale(1.035); }
+  .carrusel__flecha:hover { background: var(--papel); }
   .personas button:hover:not(:disabled) { border-color: var(--verde); }
   .enlace-suave:hover { color: var(--verde); }
 }
@@ -313,12 +312,35 @@ html.con-visor, html.con-visor body { overflow: hidden; }
 .frase__texto cite { display: block; margin-top: 1.1rem; font: 500 .66rem/1.5 var(--sans); font-style: normal; letter-spacing: .32em; text-indent: .32em; text-transform: uppercase; color: var(--oliva); }
 
 /* ==========================================================================
-   Galería
+   Galería: carrusel automático con fundido suave
    ========================================================================== */
-.galeria__grilla { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: 3rem; }
-.galeria__item { position: relative; display: block; overflow: hidden; aspect-ratio: 2 / 3; background: var(--lino); }
-.galeria__item--grande { grid-column: span 2; aspect-ratio: 4 / 5; }
-.galeria__item img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.4s var(--ease); }
+.carrusel { width: min(100%, 30rem); margin: 3rem auto 0; }
+.carrusel__marco {
+  position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--lino);
+  outline: 1px solid var(--linea); outline-offset: .45rem;
+  touch-action: pan-y;
+}
+.carrusel__foto { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
+.carrusel__foto.activa { z-index: 1; opacity: 1; }
+.carrusel__foto img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.07); transition: transform 7s linear; }
+.carrusel__foto.activa img { transform: scale(1); }
+.carrusel__flecha {
+  position: absolute; top: 50%; z-index: 2; display: grid; place-items: center;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%; transform: translateY(-50%);
+  background: rgba(251, 248, 242, .82); color: var(--verde);
+  box-shadow: 0 .4rem 1rem -.4rem rgba(0, 0, 0, .35);
+  transition: background-color .3s var(--ease);
+}
+.carrusel__flecha svg { width: 1.05rem; height: 1.05rem; }
+.carrusel__flecha--ant { left: .65rem; }
+.carrusel__flecha--sig { right: .65rem; }
+.carrusel__puntos { display: flex; justify-content: center; gap: .1rem; margin-top: 1.5rem; }
+.carrusel__punto { position: relative; width: 1.6rem; height: 1.6rem; }
+.carrusel__punto::before {
+  content: ""; position: absolute; inset: 0; margin: auto; width: .42rem; height: .42rem; border-radius: 50%;
+  background: rgba(31, 58, 45, .22); transition: background-color .4s var(--ease), transform .4s var(--ease);
+}
+.carrusel__punto.activo::before { background: var(--champana-oscuro); transform: scale(1.45); }
 
 /* ==========================================================================
    Detalles
@@ -380,20 +402,6 @@ html.con-visor, html.con-visor body { overflow: hidden; }
 .pie__gracias { margin-top: 1.6rem; font: italic 400 1.45rem/1.4 var(--serif); text-wrap: balance; }
 .pie__fecha { margin-top: .8rem; font: 500 .66rem/1.6 var(--sans); letter-spacing: .3em; text-indent: .3em; text-transform: uppercase; color: var(--champana); }
 
-/* ==========================================================================
-   Visor de fotos
-   ========================================================================== */
-.visor { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 3.5rem .75rem; background: rgba(15, 27, 21, .97); }
-.visor[hidden] { display: none; }
-.visor__img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .4); }
-.visor__boton { position: absolute; display: grid; place-items: center; width: 3rem; height: 3rem; color: var(--papel); }
-.visor__boton svg { width: 1.6rem; height: 1.6rem; }
-.visor__cerrar { top: max(.6rem, env(safe-area-inset-top)); right: .6rem; }
-.visor__nav { top: 50%; transform: translateY(-50%); }
-.visor__nav--ant { left: .25rem; }
-.visor__nav--sig { right: .25rem; }
-.visor__contador { position: absolute; left: 0; right: 0; bottom: calc(1.1rem + env(safe-area-inset-bottom)); font: 500 .68rem/1 var(--sans); letter-spacing: .3em; text-indent: .3em; color: var(--champana); }
-
 /* ---------- Música ---------- */
 /* Reproductor de YouTube que solo pone el sonido: invisible y sin recibir toques */
 .musica-youtube { position: fixed; left: 0; bottom: 0; z-index: -1; width: 200px; opacity: 0; pointer-events: none; }
@@ -422,8 +430,11 @@ html.con-visor, html.con-visor body { overflow: hidden; }
 .musica .barras i:nth-child(2) { animation-delay: -.45s; }
 .musica .barras i:nth-child(3) { animation-delay: -.2s; }
 .musica .barras i:nth-child(4) { animation-delay: -.7s; }
-.musica.sonando .barras { display: flex; }
-.musica.sonando .i-play { display: none; }
+.musica.sonando .barras, .musica.cargando .barras { display: flex; }
+.musica.sonando .i-play, .musica.cargando .i-play { display: none; }
+/* Mientras carga (o mientras pasa un anuncio en silencio) las barras quedan quietas y tenues */
+.musica.cargando .barras { opacity: .5; }
+.musica.cargando .barras i { animation: none; }
 .musica--invita::after {
   content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
   border: 1px solid var(--champana); animation: latido 1.8s var(--ease) infinite;
@@ -475,8 +486,6 @@ html.con-visor, html.con-visor body { overflow: hidden; }
   .frase__texto { width: 50%; margin: 0; padding: 4rem clamp(2.5rem, 6vw, 6rem); }
   .frase__texto p { font-size: clamp(1.9rem, 2.6vw, 2.5rem); }
 
-  .galeria__grilla { grid-template-columns: repeat(4, 1fr); grid-auto-flow: dense; gap: .75rem; }
-  .galeria__item--grande { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
 
   .detalle { padding-block: 3.25rem; }
   .vestimenta { grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 46rem; margin-inline: auto; }

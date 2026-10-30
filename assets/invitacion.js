@@ -6,7 +6,8 @@
   const contenido = document.getElementById('contenido');
   const pie = document.querySelector('.pie');
 
-  // ---------- Música: reproductor oficial de YouTube o un mp3 propio ----------
+  // ---------- Música: reproductor de YouTube invisible o un mp3 propio ----------
+  // estado(): 'sonando' (se oye la canción), 'cargando' (anuncio en silencio o cargando) o 'quieta'
   const botonMusica = document.querySelector('[data-musica]');
   const musica = botonMusica ? crearMusica() : null;
 
@@ -16,54 +17,143 @@
       return {
         reproducir: () => audio.play().catch(() => {}),
         pausar: () => audio.pause(),
-        sonando: () => !audio.paused,
+        estado: () => (audio.paused ? 'quieta' : 'sonando'),
         alCambiar: (fn) => { audio.addEventListener('play', fn); audio.addEventListener('pause', fn); },
       };
     }
 
-    // Reproductor de YouTube invisible: solo pone el sonido
     const seccion = document.querySelector('[data-youtube]');
     if (!seccion) return null;
+    const ayuda = seccion.querySelector('.musica-youtube__ayuda');
+    const textoAyuda = ayuda ? ayuda.textContent : '';
+    const inicio = Number(seccion.dataset.inicio) || 0;
+    const SIN_INICIAR = -1;
+    const TERMINADO = 0;
+    const REPRODUCIENDO = 1;
+    const CARGANDO = 3;
+    const EN_COLA = 5;
+    // En iPhone/iPad YouTube no arranca con sonido sin un toque en su reproductor
+    const esIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     let reproductor = null;
     let listo = false;
-    let quiereSonar = false;
+    let quiereSonar = false;  // ya abrieron la invitación y no han pausado
+    let primeraVez = true;    // al abrir, la canción empieza desde el principio
+    let estadoYT = -1;
     let sonando = false;
+    let avanza = false;       // el tiempo corre: suena algo (la canción o un anuncio en silencio)
+    let ultimoTiempo = -1;
     const oyentes = [];
+    const avisar = () => oyentes.forEach((fn) => fn());
+
+    const conSonido = () => {
+      reproductor.unMute();
+      reproductor.setVolume(100);
+      sonando = true;
+      // Si el navegador no dejó activar el sonido (iPhone), se pide un toque en el reproductor
+      setTimeout(() => {
+        if (quiereSonar && estadoYT === REPRODUCIENDO && reproductor.isMuted()) {
+          sonando = false;
+          if (ayuda) ayuda.textContent = 'Toca 🔊 para activar el sonido';
+          seccion.classList.add('tocar');
+          avisar();
+        }
+      }, 900);
+    };
 
     const cargar = () => {
       window.onYouTubeIframeAPIReady = () => {
         reproductor = new window.YT.Player(seccion.querySelector('[data-reproductor]'), {
           host: 'https://www.youtube-nocookie.com',
           videoId: seccion.dataset.youtube,
-          playerVars: {
-            playsinline: 1, rel: 0, loop: 1, playlist: seccion.dataset.youtube,
-            start: Number(seccion.dataset.inicio) || 0,
-          },
+          playerVars: { playsinline: 1, rel: 0, loop: 1, playlist: seccion.dataset.youtube, start: inicio },
           events: {
-            onReady: () => { listo = true; if (quiereSonar) reproductor.playVideo(); },
+            // Arranca en silencio desde ya: si YouTube pone un anuncio, pasa callado
+            // mientras el invitado mira la portada.
+            onReady: () => {
+              listo = true;
+              reproductor.mute();
+              reproductor.playVideo();
+            },
+            // Durante un anuncio YouTube informa «sin iniciar»; solo la canción informa «reproduciendo»
             onStateChange: (evento) => {
-              const estados = window.YT.PlayerState;
-              sonando = evento.data === estados.PLAYING || evento.data === estados.BUFFERING;
-              oyentes.forEach((fn) => fn());
+              estadoYT = evento.data;
+              if (estadoYT === REPRODUCIENDO && quiereSonar) {
+                if (primeraVez) {
+                  primeraVez = false;
+                  if (reproductor.getCurrentTime() > inicio + 1.5) reproductor.seekTo(inicio, true);
+                }
+                conSonido();
+              } else if (estadoYT !== REPRODUCIENDO) {
+                // Anuncios, cargas y pausas van siempre en silencio: solo se oye la canción
+                sonando = false;
+                reproductor.mute();
+              }
+              avisar();
             },
           },
         });
+        setInterval(() => {
+          if (!listo) return;
+          const tiempo = reproductor.getCurrentTime();
+          const corre = tiempo !== ultimoTiempo;
+          ultimoTiempo = tiempo;
+          // Si el invitado activó el sonido tocando el reproductor (plan B), ya está sonando
+          if (!sonando && quiereSonar && estadoYT === REPRODUCIENDO && !reproductor.isMuted()) {
+            sonando = true;
+            avisar();
+          }
+          if (corre !== avanza) {
+            avanza = corre;
+            avisar();
+          }
+        }, 700);
       };
       const script = document.createElement('script');
       script.src = 'https://www.youtube.com/iframe_api';
       document.head.append(script);
     };
-    // Se carga después de la página para no competir con las fotos
-    if (document.readyState === 'complete') cargar();
-    else window.addEventListener('load', cargar, { once: true });
+    // Se carga de una vez: mientras el invitado mira la portada, un posible anuncio ya va pasando en silencio
+    cargar();
 
     return {
-      reproducir: () => { quiereSonar = true; if (listo) reproductor.playVideo(); },
-      pausar: () => { quiereSonar = false; if (listo) reproductor.pauseVideo(); },
-      sonando: () => sonando,
+      reproducir: () => {
+        quiereSonar = true;
+        if (listo && estadoYT === REPRODUCIENDO) {
+          if (primeraVez) {
+            primeraVez = false;
+            reproductor.seekTo(inicio, true);
+          }
+          conSonido();
+        } else if (listo) {
+          reproductor.playVideo();
+        } // si aún no está listo, arranca solo al estarlo
+        avisar();
+      },
+      pausar: () => {
+        quiereSonar = false;
+        sonando = false;
+        if (listo) {
+          reproductor.pauseVideo();
+          reproductor.mute();
+        }
+        avisar();
+      },
+      estado: () => {
+        if (sonando) return 'sonando';
+        // Fuera de iPhone, «sin iniciar», «en cola» o «terminado» (al repetir) son un anuncio
+        // pasando en silencio o una carga: la canción viene en camino
+        const enCamino = [SIN_INICIAR, TERMINADO, EN_COLA].includes(estadoYT) && !esIOS;
+        const esperando = avanza || estadoYT === CARGANDO || enCamino;
+        if (quiereSonar && esperando) return 'cargando';
+        return 'quieta';
+      },
       alCambiar: (fn) => oyentes.push(fn),
       // Plan B para iPhone: mostrar el reproductor pequeño para que el invitado le dé play
-      mostrar: (visible) => seccion.classList.toggle('tocar', visible),
+      mostrar: (visible) => {
+        if (visible && ayuda) ayuda.textContent = textoAyuda;
+        seccion.classList.toggle('tocar', visible);
+      },
       visible: () => seccion.classList.contains('tocar'),
     };
   }
@@ -73,23 +163,29 @@
     botonMusica.hidden = false;
     musica.reproducir();
     // Si el navegador no dejó arrancar la música (pasa en iPhone), el botón late para invitar a tocarlo
-    setTimeout(() => { if (!musica.sonando()) botonMusica.classList.add('musica--invita'); }, 3500);
+    setTimeout(() => { if (musica.estado() === 'quieta') botonMusica.classList.add('musica--invita'); }, 3500);
   }
 
   if (musica) {
+    let ocultando = null;
     const actualizar = () => {
-      const activo = musica.sonando();
-      botonMusica.classList.toggle('sonando', activo);
-      if (activo) {
-        botonMusica.classList.remove('musica--invita');
-        if (musica.mostrar) musica.mostrar(false);
+      const estado = musica.estado();
+      botonMusica.classList.toggle('sonando', estado === 'sonando');
+      botonMusica.classList.toggle('cargando', estado === 'cargando');
+      if (estado !== 'quieta') botonMusica.classList.remove('musica--invita');
+      // Con la canción ya sonando, el reproductor pequeño del plan B se vuelve a esconder
+      if (estado === 'sonando' && musica.visible && musica.visible() && !ocultando) {
+        ocultando = setTimeout(() => {
+          ocultando = null;
+          if (musica.estado() === 'sonando') musica.mostrar(false);
+        }, 1200);
       }
-      botonMusica.setAttribute('aria-label', activo ? 'Pausar música' : 'Reproducir música');
+      botonMusica.setAttribute('aria-label', estado === 'quieta' ? 'Reproducir música' : 'Pausar música');
     };
     musica.alCambiar(actualizar);
     botonMusica.addEventListener('click', () => {
       botonMusica.classList.remove('musica--invita');
-      if (musica.sonando()) {
+      if (musica.estado() !== 'quieta') {
         musica.pausar();
         return;
       }
@@ -100,7 +196,7 @@
       musica.reproducir();
       // En iPhone YouTube solo suena si se toca su reproductor: si no arrancó, se muestra pequeño
       if (musica.mostrar) {
-        setTimeout(() => { if (!musica.sonando()) musica.mostrar(true); }, 1200);
+        setTimeout(() => { if (musica.estado() === 'quieta') musica.mostrar(true); }, 1500);
       }
     });
   }
@@ -217,55 +313,65 @@
     actualizar();
   }
 
-  // ---------- Visor de fotos ----------
-  const visor = document.getElementById('visor');
-  const fotos = Array.from(document.querySelectorAll('[data-visor]'));
-  if (visor && fotos.length) {
-    const imagen = visor.querySelector('.visor__img');
-    const contador = visor.querySelector('.visor__contador');
+  // ---------- Carrusel de fotos: pasan solas con un fundido suave ----------
+  const carrusel = document.querySelector('[data-carrusel]');
+  if (carrusel) {
+    const diapositivas = Array.from(carrusel.querySelectorAll('.carrusel__foto'));
+    const puntos = Array.from(carrusel.querySelectorAll('.carrusel__punto'));
+    const marco = carrusel.querySelector('.carrusel__marco');
+    const INTERVALO = 4500;
     let actual = 0;
-    let inicioToque = null;
+    let reloj = null;
+    let enPantalla = false;
+    let bajoElMouse = false;
 
-    const mostrar = () => {
-      const foto = fotos[actual];
-      imagen.src = foto.href;
-      imagen.alt = foto.querySelector('img').alt;
-      contador.textContent = `${actual + 1} / ${fotos.length}`;
-      // precarga la siguiente
-      new Image().src = fotos[(actual + 1) % fotos.length].href;
+    const ir = (indice) => {
+      diapositivas[actual].classList.remove('activa');
+      diapositivas[actual].setAttribute('aria-hidden', 'true');
+      puntos[actual].classList.remove('activo');
+      puntos[actual].removeAttribute('aria-current');
+      actual = (indice + diapositivas.length) % diapositivas.length;
+      diapositivas[actual].classList.add('activa');
+      diapositivas[actual].setAttribute('aria-hidden', 'false');
+      puntos[actual].classList.add('activo');
+      puntos[actual].setAttribute('aria-current', 'true');
     };
-    const mover = (paso) => { actual = (actual + paso + fotos.length) % fotos.length; mostrar(); };
-    const cerrar = () => {
-      visor.hidden = true;
-      raiz.classList.remove('con-visor');
-      fotos[actual].focus({ preventScroll: true });
+    // Avanza solo mientras se ve en pantalla (y nunca si el sistema pide reducir el movimiento)
+    const programar = () => {
+      clearInterval(reloj);
+      reloj = null;
+      if (enPantalla && !bajoElMouse && !document.hidden && !sinMovimiento) {
+        reloj = setInterval(() => ir(actual + 1), INTERVALO);
+      }
     };
+    const mover = (indice) => { ir(indice); programar(); };
 
-    fotos.forEach((foto, i) => foto.addEventListener('click', (evento) => {
-      evento.preventDefault();
-      actual = i;
-      mostrar();
-      visor.hidden = false;
-      raiz.classList.add('con-visor');
-      visor.querySelector('.visor__cerrar').focus();
-    }));
+    carrusel.querySelector('[data-carrusel-ant]').addEventListener('click', () => mover(actual - 1));
+    carrusel.querySelector('[data-carrusel-sig]').addEventListener('click', () => mover(actual + 1));
+    puntos.forEach((punto, i) => punto.addEventListener('click', () => mover(i)));
 
-    visor.querySelector('.visor__cerrar').addEventListener('click', cerrar);
-    visor.querySelector('.visor__nav--ant').addEventListener('click', () => mover(-1));
-    visor.querySelector('.visor__nav--sig').addEventListener('click', () => mover(1));
-    visor.addEventListener('click', (evento) => { if (evento.target === visor) cerrar(); });
-    document.addEventListener('keydown', (evento) => {
-      if (visor.hidden) return;
-      if (evento.key === 'Escape') cerrar();
-      if (evento.key === 'ArrowLeft') mover(-1);
-      if (evento.key === 'ArrowRight') mover(1);
+    let toqueX = null;
+    marco.addEventListener('touchstart', (evento) => { toqueX = evento.touches[0].clientX; }, { passive: true });
+    marco.addEventListener('touchend', (evento) => {
+      if (toqueX === null) return;
+      const dx = evento.changedTouches[0].clientX - toqueX;
+      if (Math.abs(dx) > 40) mover(actual + (dx < 0 ? 1 : -1));
+      toqueX = null;
     });
-    visor.addEventListener('touchstart', (evento) => { inicioToque = evento.touches[0].clientX; }, { passive: true });
-    visor.addEventListener('touchend', (evento) => {
-      if (inicioToque === null) return;
-      const dx = evento.changedTouches[0].clientX - inicioToque;
-      if (Math.abs(dx) > 45) mover(dx < 0 ? 1 : -1);
-      inicioToque = null;
-    });
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([entrada]) => {
+        enPantalla = entrada.isIntersecting;
+        programar();
+      }, { threshold: 0.25 }).observe(carrusel);
+    } else {
+      enPantalla = true;
+      programar();
+    }
+    document.addEventListener('visibilitychange', programar);
+    if (window.matchMedia('(hover: hover)').matches) {
+      carrusel.addEventListener('mouseenter', () => { bajoElMouse = true; programar(); });
+      carrusel.addEventListener('mouseleave', () => { bajoElMouse = false; programar(); });
+    }
   }
 })();
