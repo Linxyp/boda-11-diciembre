@@ -242,25 +242,17 @@ html.con-visor, html.con-visor body { overflow: hidden; }
    Bienvenida
    ========================================================================== */
 .bienvenida { padding-block: clamp(3.5rem, 10vw, 6rem) clamp(5rem, 15vw, 8.5rem); }
-.bienvenida__texto { font: italic 400 clamp(1.4rem, 5.6vw, 1.8rem)/1.55 var(--serif); color: var(--tinta); text-wrap: balance; }
-.bienvenida__personal { margin-top: 1.75rem; color: var(--tinta-suave); }
-.bienvenida:has(+ .cancion) { padding-bottom: clamp(3rem, 9vw, 5rem); }
-
-/* ==========================================================================
-   Nuestra canción (reproductor oficial de YouTube, siempre visible)
-   ========================================================================== */
-.cancion { padding-bottom: clamp(5rem, 15vw, 8.5rem); }
-.cancion__titulo { margin-top: .45rem; font: italic 400 clamp(2.1rem, 8.4vw, 2.9rem)/1.1 var(--serif); color: var(--verde); }
-.cancion__artista { margin-top: .35rem; font: 500 .7rem/1.5 var(--sans); letter-spacing: .3em; text-indent: .3em; text-transform: uppercase; color: var(--champana-oscuro); }
-.cancion__marco {
-  width: min(100%, 30rem); margin: 1.75rem auto 0; padding: .5rem;
-  background: var(--papel-claro); border: 1px solid var(--linea);
-  outline: 1px solid var(--linea); outline-offset: .3rem;
+/* Nombres completos de los novios, en mayúsculas espaciadas como papelería grabada */
+.bienvenida__nombres {
+  display: grid; justify-items: center; gap: .35rem;
+  font: 400 clamp(1.3rem, 5.6vw, 1.85rem)/1.25 var(--serif);
+  letter-spacing: .14em; text-indent: .14em; text-transform: uppercase;
+  color: var(--verde); text-wrap: balance;
 }
-/* Proporción 16:9 con un mínimo de 200 px de alto (lo exige YouTube) sin desbordar el ancho */
-.cancion__video { position: relative; height: 0; padding-top: max(56.25%, 200px); overflow: hidden; background: var(--verde); }
-.cancion__video > a, .cancion__video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.cancion__video img { width: 100%; height: 100%; object-fit: cover; }
+.bienvenida__y { font-style: italic; font-size: 1.35em; line-height: 1; letter-spacing: 0; text-indent: 0; text-transform: none; color: var(--champana-oscuro); }
+.bienvenida__texto { margin-top: 1.6rem; font: italic 400 clamp(1.3rem, 5.2vw, 1.7rem)/1.55 var(--serif); color: var(--tinta); text-wrap: balance; }
+.bienvenida__personal { margin-top: 1.75rem; color: var(--tinta-suave); }
+.rama--abajo { margin: 1.9rem auto 0; transform: scaleY(-1); }
 
 /* ==========================================================================
    Fecha: calendario y cuenta regresiva
@@ -417,6 +409,20 @@ html.con-visor, html.con-visor body { overflow: hidden; }
 .visor__contador { position: absolute; left: 0; right: 0; bottom: calc(1.1rem + env(safe-area-inset-bottom)); font: 500 .68rem/1 var(--sans); letter-spacing: .3em; text-indent: .3em; color: var(--champana); }
 
 /* ---------- Música ---------- */
+/* Reproductor de YouTube que solo pone el sonido: invisible y sin recibir toques */
+.musica-youtube { position: fixed; left: 0; bottom: 0; z-index: -1; width: 200px; opacity: 0; pointer-events: none; }
+.musica-youtube__video { position: relative; height: 200px; overflow: hidden; background: var(--verde); }
+.musica-youtube__video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.musica-youtube__ayuda { display: none; }
+/* Plan B (iPhone): si la música no arranca sola, el botón muestra el reproductor pequeño */
+.musica-youtube.tocar {
+  left: auto; right: 1rem; bottom: calc(4.75rem + env(safe-area-inset-bottom)); z-index: 41;
+  width: 13.5rem; padding: .45rem .45rem .7rem; opacity: 1; pointer-events: auto;
+  background: var(--papel-claro); border: 1px solid var(--linea);
+  box-shadow: 0 1.5rem 3rem -1.5rem rgba(0, 0, 0, .5);
+}
+.musica-youtube.tocar .musica-youtube__ayuda { display: block; margin-top: .55rem; font-size: .8rem; line-height: 1.35; text-align: center; color: var(--tinta-suave); }
+
 .musica {
   position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 40;
   display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%;

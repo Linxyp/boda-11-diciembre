@@ -21,6 +21,7 @@
       };
     }
 
+    // Reproductor de YouTube invisible: solo pone el sonido
     const seccion = document.querySelector('[data-youtube]');
     if (!seccion) return null;
     let reproductor = null;
@@ -61,7 +62,9 @@
       pausar: () => { quiereSonar = false; if (listo) reproductor.pauseVideo(); },
       sonando: () => sonando,
       alCambiar: (fn) => oyentes.push(fn),
-      seccion,
+      // Plan B para iPhone: mostrar el reproductor pequeño para que el invitado le dé play
+      mostrar: (visible) => seccion.classList.toggle('tocar', visible),
+      visible: () => seccion.classList.contains('tocar'),
     };
   }
 
@@ -77,7 +80,10 @@
     const actualizar = () => {
       const activo = musica.sonando();
       botonMusica.classList.toggle('sonando', activo);
-      if (activo) botonMusica.classList.remove('musica--invita');
+      if (activo) {
+        botonMusica.classList.remove('musica--invita');
+        if (musica.mostrar) musica.mostrar(false);
+      }
       botonMusica.setAttribute('aria-label', activo ? 'Pausar música' : 'Reproducir música');
     };
     musica.alCambiar(actualizar);
@@ -87,12 +93,14 @@
         musica.pausar();
         return;
       }
+      if (musica.visible && musica.visible()) {
+        musica.mostrar(false);
+        return;
+      }
       musica.reproducir();
-      // En iPhone el video de YouTube solo arranca si se toca: si no sonó, lleva a la canción
-      if (musica.seccion) {
-        setTimeout(() => {
-          if (!musica.sonando()) musica.seccion.scrollIntoView({ behavior: sinMovimiento ? 'auto' : 'smooth', block: 'center' });
-        }, 1500);
+      // En iPhone YouTube solo suena si se toca su reproductor: si no arrancó, se muestra pequeño
+      if (musica.mostrar) {
+        setTimeout(() => { if (!musica.sonando()) musica.mostrar(true); }, 1200);
       }
     });
   }
