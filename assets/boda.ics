@@ -1,0 +1,23 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Invitacion de boda//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:boda-20261211-novia&novio@invitacion
+DTSTAMP:20261030T045203Z
+DTSTART:20261211T210000Z
+DTEND:20261212T040000Z
+SUMMARY:Boda de Novia & Novio
+LOCATION:Iglesia San Gerardo Mayela\, Transversal 22 Bis #61B-73\, Bogot
+ á
+DESCRIPTION:4:00 p. m. · Ceremonia religiosa: Iglesia San Gerardo Mayela
+ \, Transversal 22 Bis #61B-73\n6:00 p. m. · Recepción: Salón Rojo\, C
+ alle 24F #85B-85
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Mañana es la boda de Novia & Novio
+END:VALARM
+END:VEVENT
+END:VCALENDAR
