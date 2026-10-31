@@ -4,7 +4,8 @@
   // Cada boda usa sus propias llaves: varias pueden vivir en el mismo dominio de GitHub Pages
   const idBoda = document.body.dataset.boda;
   const LLAVE_CLAVE = `portal-clave-${idBoda}`;
-  const LLAVE_ENVIADAS = `portal-enviadas-${idBoda}`;
+  // Subir la ronda en boda.toml deja todo otra vez como pendiente en todos los celulares
+  const LLAVE_ENVIADAS = `portal-enviadas-${idBoda}-${document.body.dataset.ronda}`;
   const cifrado = JSON.parse(document.getElementById('cifrado').textContent);
   const esCelular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
