@@ -1,0 +1,111 @@
+/* ==========================================================================
+   Portal de invitaciones: lista de invitados y envío por WhatsApp desde el celular.
+   Usa los colores y tipografías de estilos.css. Todo va en el flujo normal de la
+   página (sin <dialog> ni capas fijas), lo más estable en Safari de iPhone.
+   ========================================================================== */
+[hidden] { display: none !important; }
+
+.sin-javascript { padding: 2rem 1.25rem; text-align: center; }
+
+/* ---------- Acceso ---------- */
+.acceso { display: grid; min-height: 100vh; min-height: 100svh; padding: .85rem; background: var(--verde) var(--grano-claro); color: var(--papel); }
+.acceso__marco {
+  position: relative; display: grid; align-content: center; justify-items: center;
+  padding: 2.5rem 1.5rem; text-align: center;
+  border: 1px solid rgba(205, 179, 135, .5);
+}
+.acceso__marco::before { content: ""; position: absolute; inset: .4rem; pointer-events: none; border: 1px solid rgba(205, 179, 135, .22); }
+.acceso__marco > * { position: relative; }
+.acceso__titulo { margin-top: 1.5rem; font: italic 400 clamp(2rem, 9vw, 2.75rem)/1.12 var(--serif); }
+.acceso__novios { margin-top: .6rem; font: 400 .68rem/1.6 var(--sans); letter-spacing: .26em; text-indent: .26em; text-transform: uppercase; color: var(--champana-claro); }
+.acceso__form { display: grid; justify-items: center; gap: .85rem; width: min(100%, 17rem); margin-top: 2.5rem; }
+.acceso__etiqueta { font: italic 400 1.05rem/1.3 var(--serif); color: var(--champana-claro); }
+.acceso__campo {
+  width: 100%; padding: .6rem .5rem; text-align: center;
+  font: 400 1.35rem/1.2 var(--sans); letter-spacing: .3em; color: var(--papel);
+  background: transparent; border: 0; border-bottom: 1px solid rgba(205, 179, 135, .65); border-radius: 0;
+}
+.acceso__campo:focus { outline: none; border-bottom-color: var(--papel); }
+.acceso__error { font-size: .9rem; color: #F0C9B4; }
+.acceso .boton { width: 100%; margin-top: .6rem; }
+.acceso .boton:disabled { opacity: .6; }
+
+/* ---------- Encabezado de la lista ---------- */
+.encabezado { padding: calc(1.5rem + env(safe-area-inset-top)) 1.25rem 1.3rem; background: var(--verde) var(--grano-claro); color: var(--papel); }
+.encabezado__fila { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.encabezado__titulo { font: italic 400 2.2rem/1.1 var(--serif); }
+.encabezado__novios { margin-top: .3rem; font: 400 .64rem/1.6 var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--champana-claro); }
+.encabezado__salir { padding: .4rem 0 .4rem .6rem; font-size: .85rem; color: var(--champana-claro); text-decoration: underline; text-underline-offset: .25em; }
+.progreso { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.15rem; font-size: .9rem; color: var(--champana-claro); }
+.progreso__barra { height: 3px; margin-top: .5rem; background: rgba(246, 241, 231, .16); }
+.progreso__barra i { display: block; width: 0; height: 100%; background: var(--champana); transition: width .5s var(--ease); }
+
+/* ---------- Búsqueda y filtros (quedan visibles al bajar) ---------- */
+.controles { position: sticky; top: 0; z-index: 5; padding: .75rem 1.25rem 0; background: rgba(246, 241, 231, .995); border-bottom: 1px solid var(--linea); }
+.controles__buscar {
+  display: block; width: 100%; padding: .7rem .85rem; -webkit-appearance: none; appearance: none;
+  font: 400 1rem/1.3 var(--sans); color: var(--tinta);
+  background: var(--papel-claro); border: 1px solid var(--linea); border-radius: 0;
+}
+.controles__buscar:focus { outline: none; border-color: var(--verde); }
+.filtros { display: flex; margin-top: .35rem; }
+.filtros button {
+  flex: 1; min-height: 2.75rem; padding: .3rem .15rem;
+  font: 500 .66rem/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-suave);
+  border-bottom: 2px solid transparent;
+}
+.filtros button[aria-pressed="true"] { color: var(--verde); border-bottom-color: var(--verde); }
+
+/* ---------- Lista ---------- */
+.listado { width: min(100%, 40rem); margin-inline: auto; padding: .4rem 1.25rem calc(2.5rem + env(safe-area-inset-bottom)); }
+.aviso-importante { margin-top: .9rem; padding: .75rem .9rem; font-size: .92rem; line-height: 1.45; color: var(--tinta); background: #F1E7D2; border-left: 2px solid var(--champana-oscuro); }
+.aviso-importante strong { font-weight: 600; color: var(--verde); }
+.invitados { list-style: none; padding: 0; }
+.fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .9rem; width: 100%; padding: .9rem 0; text-align: left; border-bottom: 1px solid var(--linea); }
+.fila__nombre { display: block; font: italic 400 1.32rem/1.2 var(--serif); color: var(--tinta); overflow-wrap: anywhere; }
+.fila__detalle { display: block; margin-top: .15rem; font-size: .84rem; line-height: 1.35; color: var(--tinta-suave); }
+.fila__detalle--aviso { color: #9C3D2E; }
+.fila__accion { display: inline-flex; align-items: center; gap: .3rem; min-height: 2.6rem; padding: 0 1rem; font: 500 .66rem/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--papel); background: var(--verde); }
+.fila__accion svg { width: 1.05rem; height: 1.05rem; }
+.fila--enviada .fila__accion { padding: 0; letter-spacing: .1em; color: var(--oliva); background: none; }
+.fila--enviada .fila__nombre { color: var(--tinta-suave); }
+.vacio { padding: 3rem 1rem; text-align: center; font: italic 400 1.3rem/1.4 var(--serif); color: var(--tinta-suave); }
+
+/* ---------- Envío de una invitación ---------- */
+.envio { width: min(100%, 34rem); margin-inline: auto; padding: env(safe-area-inset-top) 1.25rem 0; }
+.envio__barra { display: flex; align-items: center; justify-content: space-between; min-height: 3.25rem; }
+.envio__volver { display: inline-flex; align-items: center; gap: .3rem; min-height: 2.75rem; font: 500 .7rem/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; text-decoration: none; color: var(--verde); }
+.envio__volver svg { width: 1.1rem; height: 1.1rem; margin-left: -.3rem; }
+.envio__posicion { font-size: .85rem; color: var(--tinta-suave); }
+
+.estado-enviada { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; padding: .7rem .9rem; font-size: .95rem; font-weight: 500; line-height: 1.35; color: var(--verde); background: #E4ECD9; }
+.estado-enviada svg { flex: none; width: 1.2rem; height: 1.2rem; }
+.envio .aviso-importante { margin: 0 0 .75rem; }
+
+.vista-previa { padding: .55rem; color: var(--papel); background: var(--verde) var(--grano-claro); }
+.vista-previa__marco { position: relative; display: grid; justify-items: center; padding: 1.5rem 1rem 1.75rem; text-align: center; border: 1px solid rgba(205, 179, 135, .5); }
+.vista-previa__marco::before { content: ""; position: absolute; inset: .3rem; pointer-events: none; border: 1px solid rgba(205, 179, 135, .22); }
+.vista-previa .monograma { width: 6.75rem; }
+.vista-previa .monograma__iniciales { font-size: 1.65rem; }
+.vista-previa__para { margin-top: .8rem; font: italic 400 1rem/1.3 var(--serif); color: var(--champana-claro); }
+.vista-previa__nombre { margin-top: .25rem; font: italic 400 clamp(1.9rem, 8.6vw, 2.6rem)/1.12 var(--serif); text-wrap: balance; overflow-wrap: anywhere; }
+.vista-previa__linea { width: 2.75rem; height: 1px; margin: .9rem auto .7rem; background: var(--champana); opacity: .75; }
+.vista-previa__pases { font: 400 .64rem/1.6 var(--sans); letter-spacing: .18em; text-indent: .18em; text-transform: uppercase; color: var(--champana-claro); text-wrap: balance; }
+
+.envio__enlaces { display: flex; justify-content: center; gap: 1.5rem; padding: .35rem 0; }
+.envio__enlaces a, .envio__enlaces button { min-height: 2.75rem; font-size: .92rem; line-height: 2.75rem; color: var(--verde); text-decoration: underline; text-decoration-color: var(--linea); text-underline-offset: .28em; }
+
+.mensaje { padding-bottom: .5rem; }
+.mensaje__titulo { text-indent: 0; }
+.mensaje__texto {
+  margin-top: .55rem; padding: .85rem 1rem; white-space: pre-wrap; overflow-wrap: anywhere;
+  font-size: .95rem; line-height: 1.5; color: var(--tinta);
+  background: #E6EBDA; border-radius: 0 .9rem .9rem .9rem;
+}
+
+/* La acción principal siempre a la vista, aunque el mensaje sea largo */
+.acciones { position: sticky; bottom: 0; z-index: 5; padding: 1.1rem 0 calc(.9rem + env(safe-area-inset-bottom)); background: linear-gradient(rgba(246, 241, 231, 0), var(--papel) 1.1rem); }
+.acciones .boton { display: flex; width: 100%; min-height: 3.4rem; font-size: .74rem; letter-spacing: .18em; text-align: center; }
+.acciones .boton svg { width: 1.5em; height: 1.5em; }
+.acciones__secundarias { display: flex; justify-content: center; gap: 1.5rem; margin-top: .15rem; }
+.acciones__secundarias a, .acciones__secundarias button { min-height: 2.5rem; font-size: .9rem; line-height: 2.5rem; color: var(--tinta-suave); text-decoration: underline; text-decoration-color: var(--linea); text-underline-offset: .28em; }
